@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="colorPrimary">#FF4081</color>
+    <color name="colorPrimaryDark">#303f9f</color>
+    <color name="colorAccent">#FF4081</color>
+    <color name="PastelHotPink">#FF4980</color>
+    <color name="Black">#282828</color>
+    <color name="White">#ffffff</color>
+    <color name="BlackGray">#363434</color>
+    <color name="LightGray">#484848</color>
+</resources>

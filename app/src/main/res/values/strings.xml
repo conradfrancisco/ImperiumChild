@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">ImperiumMonitoring</string>
+    <string name="auth_failed">Authentication Failed</string>
+    <string name="enter">Please enter the Email Address you have inputted on Child Addition.</string>
+</resources>

@@ -1,0 +1,107 @@
+{
+  "project_info": {
+    "project_number": "91041285318",
+    "firebase_url": "https://imperium-72663.firebaseio.com",
+    "project_id": "imperium-72663",
+    "storage_bucket": "imperium-72663.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:91041285318:android:cc7243950e6ce318",
+        "android_client_info": {
+          "package_name": "capstone.uic.com.imperium"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "91041285318-bimna8hav0s939qj87hd54nf4h0hvi0o.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "capstone.uic.com.imperium",
+            "certificate_hash": "f7207bccba58f5209a84b0d48d1ed14d11a57dbc"
+          }
+        },
+        {
+          "client_id": "91041285318-2i48ij9bk2vjr2p9f773lgjd21ib41gm.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "capstone.uic.com.imperium",
+            "certificate_hash": "af720101add26d47af92925c8fbf4da2292fe280"
+          }
+        },
+        {
+          "client_id": "91041285318-4ajdqm5ekpmj0eqhh2hpii6shf28i899.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBhtoiG94hNeVs2GY11qXPTC74YD2c-YKk"
+        }
+      ],
+      "services": {
+        "analytics_service": {
+          "status": 1
+        },
+        "appinvite_service": {
+          "status": 2,
+          "other_platform_oauth_client": [
+            {
+              "client_id": "91041285318-kei17lv6f94pt5eagor1d2tb7k88ghjl.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        },
+        "ads_service": {
+          "status": 2
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:91041285318:android:4d0e65c843fa4ba2",
+        "android_client_info": {
+          "package_name": "uic.com.imperiumchild"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "91041285318-pd3u8p7vmmeh2iievlfccapfleivv7n9.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "uic.com.imperiumchild",
+            "certificate_hash": "af720101add26d47af92925c8fbf4da2292fe280"
+          }
+        },
+        {
+          "client_id": "91041285318-4ajdqm5ekpmj0eqhh2hpii6shf28i899.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBhtoiG94hNeVs2GY11qXPTC74YD2c-YKk"
+        }
+      ],
+      "services": {
+        "analytics_service": {
+          "status": 1
+        },
+        "appinvite_service": {
+          "status": 2,
+          "other_platform_oauth_client": [
+            {
+              "client_id": "91041285318-kei17lv6f94pt5eagor1d2tb7k88ghjl.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        },
+        "ads_service": {
+          "status": 2
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
