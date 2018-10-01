@@ -99,7 +99,7 @@ public class CheckerService extends Service {
     public void startTimer1() {
         timer = new Timer();
         initializeTimerTask1();
-        timer.schedule(timerTask1, 60000, 60000);
+        timer.schedule(timerTask1, 1000, 60000);
     }
 
     public void initializeTimerTask1() {
@@ -154,7 +154,7 @@ public class CheckerService extends Service {
 
         private void prettyPrint() {
 
-            System.out.println(appname + "\t" + pname);
+            System.out.println("\n"+appname + "\t" + pname);
 
         }
     }
@@ -170,6 +170,7 @@ public class CheckerService extends Service {
 
     private ArrayList<PInfo> getInstalledApps(boolean getSysPackages) {
         ArrayList<PInfo> res = new ArrayList<PInfo>();
+        List<String> data = new ArrayList<>();
         List<PackageInfo> packs = getPackageManager().getInstalledPackages(0);
         for(int i=0;i<packs.size();i++) {
             PackageInfo p = packs.get(i);
@@ -183,10 +184,19 @@ public class CheckerService extends Service {
             if (newInfo.appname.equals("Facebook") || newInfo.appname.equals("Youtube") || newInfo.appname.equals("Twitter") || newInfo.appname.equals("Instagram") || newInfo.appname.equals("Chrome") || newInfo.appname.equals("Tumblr") || newInfo.appname.equals("Pinterest") || newInfo.appname.equals("Rise of Civilizations")){
 
                 res.add(newInfo);
-                DatabaseReference rootRef = FirebaseDatabase.getInstance().getReference().child("Users");
+                String split[] = passval.split("@");
+                data.add(newInfo.appname);
 
             }
+
         }
+
+        String splits[] = passval.split("@");
+        DatabaseReference rootRef = FirebaseDatabase.getInstance().getReference().child("Users");
+        for(String datum : data) {
+            rootRef.child(user).child("Children").child(splits[0]).child("Apps").child(datum).setValue(true);
+        }
+
         return res;
     }
 
