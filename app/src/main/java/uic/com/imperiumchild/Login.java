@@ -19,7 +19,6 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ProgressBar;
-import android.widget.Toast;
 import android.support.design.widget.Snackbar;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
@@ -100,15 +99,12 @@ public class Login extends AppCompatActivity {
 
                                     if(task.getException() instanceof FirebaseAuthUserCollisionException) {
 
-                                        Snackbar sn = Snackbar.make(constraint, "Account already Registered, Signing In!", Snackbar.LENGTH_INDEFINITE);
+                                        final Snackbar sn = Snackbar.make(constraint, "Account already Registered, Signing In!", Snackbar.LENGTH_INDEFINITE);
                                         sn.show();
                                         inputuser.setText(null);
 
                                         final String newpass = password;
                                         final String newuser = user;
-                                        new Thread(new Runnable() {
-                                            @Override
-                                            public void run() {
 
                                                 try {
 
@@ -117,6 +113,7 @@ public class Login extends AppCompatActivity {
                                                                 @Override
                                                                 public void onComplete(@NonNull Task<AuthResult> task) {
                                                                     bar.setVisibility(View.GONE);
+                                                                    sn.dismiss();
                                                                     if(task.isSuccessful()){
 
                                                                         startActivity(new Intent(Login.this, MainClass.class));
@@ -135,15 +132,15 @@ public class Login extends AppCompatActivity {
 
                                                             });
 
-                                                } catch (Exception e) {
+                                                }
+
+                                                catch (Exception e) {
+
                                                     Log.e("SignIn", e.getMessage(), e);
                                                 }
 
-                                            }
+                                     }
 
-
-                                        });
-                                    }
                                     else if(task.isSuccessful()) {
 
                                         Snackbar sn = Snackbar.make(constraint, "Success!", Snackbar.LENGTH_SHORT);

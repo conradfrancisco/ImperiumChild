@@ -18,8 +18,13 @@ import android.support.annotation.Nullable;
 import android.support.v4.view.PagerAdapter;
 import android.util.Log;
 
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.ValueEventListener;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -31,7 +36,11 @@ import java.util.TimerTask;
 public class CheckerService extends Service {
 
     public int counter=0;
+    private FirebaseAuth auth;
+    FirebaseUser current;
     String value = "";
+    String user = "";
+    String passval = "";
     SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
     public CheckerService(Context applicationContext) {
@@ -47,6 +56,10 @@ public class CheckerService extends Service {
     public int onStartCommand(Intent intent, int flags, int startId) {
         super.onStartCommand(intent, flags, startId);
 
+        auth = FirebaseAuth.getInstance();
+        current = auth.getCurrentUser();
+        passval = current.getEmail();
+        getCurrentUser();
         startTimer();
         startTimer1();
 
@@ -175,6 +188,33 @@ public class CheckerService extends Service {
             }
         }
         return res;
+    }
+
+    public void getCurrentUser(){
+
+        String split[] = passval.split("@");
+        DatabaseReference getuser = FirebaseDatabase.getInstance().getReference().child("Children");
+        getuser.child(split[0]).addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(DataSnapshot dataSnapshot) {
+
+                if( dataSnapshot != null){
+
+                    user = dataSnapshot.getValue(String.class);
+                    System.out.println(user);
+
+                }
+
+            }
+
+            @Override
+            public void onCancelled(DatabaseError databaseError) {
+
+
+
+            }
+        });
+
     }
 
 
