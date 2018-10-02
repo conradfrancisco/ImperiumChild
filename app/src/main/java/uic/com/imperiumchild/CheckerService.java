@@ -1,23 +1,24 @@
 package uic.com.imperiumchild;
 
-import android.app.ActivityManager;
+
 import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.Service;
-import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
-import android.content.IntentFilter;
-import android.content.pm.ApplicationInfo;
-import android.content.pm.PackageInfo;
-import android.content.pm.PackageManager;
-import android.net.Uri;
+import android.location.Location;
+import android.location.LocationManager;
+import android.os.Bundle;
 import android.os.IBinder;
-import android.support.annotation.Nullable;
-import android.support.v4.view.PagerAdapter;
 import android.util.Log;
+import android.content.IntentFilter;
+import android.content.pm.PackageInfo;
+import android.net.Uri;
+import android.support.annotation.Nullable;
+import android.widget.Toast;
 
+import com.google.android.gms.instantapps.ActivityCompat;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.DataSnapshot;
@@ -25,13 +26,16 @@ import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
+import com.intentfilter.androidpermissions.PermissionManager;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
+
+import static android.Manifest.permission.ACCESS_COARSE_LOCATION;
+import static java.util.Collections.singleton;
 
 public class CheckerService extends Service {
 
@@ -42,6 +46,10 @@ public class CheckerService extends Service {
     String user = "";
     String passval = "";
     SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+    private static final String TAG = "LocationMonitoring";
+    private LocationManager mLocationManager = null;
+    private static final int LOCATION_INTERVAL = 10000;
+    private static final float LOCATION_DISTANCE = 0;
 
     public CheckerService(Context applicationContext) {
         super();
@@ -50,6 +58,47 @@ public class CheckerService extends Service {
     public CheckerService(){
 
     }
+
+    private class LocationListener implements android.location.LocationListener
+    {
+        Location mLastLocation;
+
+        public LocationListener(String provider)
+        {
+            Log.e(TAG, "LocationListener " + provider);
+            mLastLocation = new Location(provider);
+        }
+
+        @Override
+        public void onLocationChanged(Location location)
+        {
+            Log.e(TAG, "onLocationChanged: " + location);
+            mLastLocation.set(location);
+        }
+
+        @Override
+        public void onProviderDisabled(String provider)
+        {
+            Log.e(TAG, "onProviderDisabled: " + provider);
+        }
+
+        @Override
+        public void onProviderEnabled(String provider)
+        {
+            Log.e(TAG, "onProviderEnabled: " + provider);
+        }
+
+        @Override
+        public void onStatusChanged(String provider, int status, Bundle extras)
+        {
+            Log.e(TAG, "onStatusChanged: " + provider);
+        }
+    }
+
+    LocationListener[] mLocationListeners = new LocationListener[] {
+            new LocationListener(LocationManager.GPS_PROVIDER),
+            new LocationListener(LocationManager.NETWORK_PROVIDER)
+    };
 
 
     @Override
@@ -73,6 +122,51 @@ public class CheckerService extends Service {
         Intent broadcastIntent = new Intent("RestartSensor");
         sendBroadcast(broadcastIntent);
         stoptimertask();
+    }
+
+    @Override
+    public void onCreate()
+    {
+        PermissionManager permissionManager = PermissionManager.getInstance(getApplicationContext());
+        permissionManager.checkPermissions(singleton(android.Manifest.permission.ACCESS_FINE_LOCATION), new PermissionManager.PermissionRequestListener(){
+            @Override
+            public void onPermissionGranted() {
+                Toast.makeText(getApplication(), "Permissions Granted", Toast.LENGTH_SHORT).show();
+                Log.e(TAG, "onCreate");
+                initializeLocationManager();
+                try {
+                    mLocationManager.requestLocationUpdates(
+                            LocationManager.NETWORK_PROVIDER, LOCATION_INTERVAL, LOCATION_DISTANCE,
+                            mLocationListeners[1]);
+                } catch (java.lang.SecurityException ex) {
+                    Log.i(TAG, "Failed to request Location Update, ignore", ex);
+                } catch (IllegalArgumentException ex) {
+                    Log.d(TAG, "Network Provider does not exist, " + ex.getMessage());
+                }
+                try {
+                    mLocationManager.requestLocationUpdates(
+                            LocationManager.GPS_PROVIDER, LOCATION_INTERVAL, LOCATION_DISTANCE,
+                            mLocationListeners[0]);
+                } catch (java.lang.SecurityException ex) {
+                    Log.i(TAG, "Failed to request Location Update, ignore", ex);
+                } catch (IllegalArgumentException ex) {
+                    Log.d(TAG, "GPS Provider does not exist " + ex.getMessage());
+                }
+            }
+
+            @Override
+            public void onPermissionDenied() {
+                Toast.makeText(getApplicationContext(), "Permissions Denied", Toast.LENGTH_SHORT).show();
+            }
+        });
+
+    }
+
+    private void initializeLocationManager() {
+        Log.e(TAG, "initializeLocationManager");
+        if (mLocationManager == null) {
+            mLocationManager = (LocationManager) getApplicationContext().getSystemService(Context.LOCATION_SERVICE);
+        }
     }
 
     private Timer timer, timer1;
