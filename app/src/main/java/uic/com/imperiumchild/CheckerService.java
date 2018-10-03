@@ -45,6 +45,7 @@ public class CheckerService extends Service {
     String value = "";
     String user = "";
     String passval = "";
+    String useremail;
     SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
     private static final String TAG = "LocationMonitoring";
     private LocationManager mLocationManager = null;
@@ -67,6 +68,7 @@ public class CheckerService extends Service {
         {
             Log.e(TAG, "LocationListener " + provider);
             mLastLocation = new Location(provider);
+
         }
 
         @Override
@@ -74,6 +76,11 @@ public class CheckerService extends Service {
         {
             Log.e(TAG, "onLocationChanged: " + location);
             mLastLocation.set(location);
+            String split[] = location.toString().split(" ");
+            System.out.println("My Location: "+split[1]);
+            DatabaseReference getuser = FirebaseDatabase.getInstance().getReference().child("Users");
+            getuser.child(user).child("Children").child(useremail).child("CurrentLocation").setValue(split[1]);
+
         }
 
         @Override
@@ -108,6 +115,8 @@ public class CheckerService extends Service {
         auth = FirebaseAuth.getInstance();
         current = auth.getCurrentUser();
         passval = current.getEmail();
+        String splitting[] = passval.split("@");
+        useremail = splitting[0];
         getCurrentUser();
         startTimer();
         startTimer1();
@@ -297,6 +306,7 @@ public class CheckerService extends Service {
     public void getCurrentUser(){
 
         String split[] = passval.split("@");
+
         DatabaseReference getuser = FirebaseDatabase.getInstance().getReference().child("Children");
         getuser.child(split[0]).addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
