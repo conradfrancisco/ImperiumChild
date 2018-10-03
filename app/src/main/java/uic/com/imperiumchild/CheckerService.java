@@ -78,8 +78,8 @@ public class CheckerService extends Service {
             mLastLocation.set(location);
             String split[] = location.toString().split(" ");
             System.out.println("My Location: "+split[1]);
-            DatabaseReference getuser = FirebaseDatabase.getInstance().getReference().child("Users");
-            getuser.child(user).child("Children").child(useremail).child("CurrentLocation").setValue(split[1]);
+            DatabaseReference getuser = FirebaseDatabase.getInstance().getReference().child("Children");
+            getuser.child(useremail).child("CurrentLocation").setValue(split[1]);
 
         }
 
