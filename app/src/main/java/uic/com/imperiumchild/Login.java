@@ -29,11 +29,9 @@ import com.google.firebase.auth.FirebaseAuthUserCollisionException;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 
-
 /**
  * Created by Conrad Francisco Jr on 6/12/2018.
  */
-
 
 public class Login extends AppCompatActivity {
 

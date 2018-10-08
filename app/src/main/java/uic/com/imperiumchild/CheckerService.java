@@ -1,16 +1,22 @@
 package uic.com.imperiumchild;
 
 
+import android.app.KeyguardManager;
 import android.app.Notification;
+import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.Service;
+import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.location.Location;
 import android.location.LocationManager;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.IBinder;
+import android.provider.Settings;
+import android.support.annotation.NonNull;
 import android.util.Log;
 import android.content.IntentFilter;
 import android.content.pm.PackageInfo;
@@ -28,6 +34,13 @@ import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 import com.intentfilter.androidpermissions.PermissionManager;
 
+import java.io.BufferedReader;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.List;
@@ -41,16 +54,21 @@ public class CheckerService extends Service {
 
     public int counter=0;
     private FirebaseAuth auth;
+    private String values = "";
     FirebaseUser current;
     String value = "";
     String user = "";
     String passval = "";
     String useremail;
+    String splitss[];
     SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
     private static final String TAG = "LocationMonitoring";
     private LocationManager mLocationManager = null;
     private static final int LOCATION_INTERVAL = 10000;
     private static final float LOCATION_DISTANCE = 0;
+    private BroadcastReceiver mReceiver;
+    private int isBlocked;
+    final Context ctx = this;
 
     public CheckerService(Context applicationContext) {
         super();
@@ -79,7 +97,8 @@ public class CheckerService extends Service {
             String split[] = location.toString().split(" ");
             System.out.println("My Location: "+split[1]);
             DatabaseReference getuser = FirebaseDatabase.getInstance().getReference().child("Children");
-            getuser.child(useremail).child("CurrentLocation").setValue(split[1]);
+            System.out.println("Useremail: "+useremail+" and Email: "+splitss[0]);
+            getuser.child(useremail).child(splitss[0]).child("CurrentLocation").setValue(split[1]);
 
         }
 
@@ -115,12 +134,42 @@ public class CheckerService extends Service {
         auth = FirebaseAuth.getInstance();
         current = auth.getCurrentUser();
         passval = current.getEmail();
-        String splitting[] = passval.split("@");
-        useremail = splitting[0];
-        getCurrentUser();
+        splitss = passval.split("@");
+
+        try {
+            InputStream inputStream = ctx.openFileInput("test.txt");
+
+            if ( inputStream != null ) {
+                InputStreamReader inputStreamReader = new InputStreamReader(inputStream);
+                BufferedReader bufferedReader = new BufferedReader(inputStreamReader);
+                String receiveString = "";
+                StringBuilder stringBuilder = new StringBuilder();
+
+                while ( (receiveString = bufferedReader.readLine()) != null ) {
+                    stringBuilder.append(receiveString);
+                    Log.d("CheckerService", "Reading from Text File");
+                }
+
+                inputStream.close();
+                values = stringBuilder.toString();
+                isBlocked = Integer.parseInt(values);
+                System.out.println(value);
+            }
+        }
+        catch (FileNotFoundException e) {
+
+            Log.e("login activity", "File not found: " + e.toString());
+        }
+
+        catch (IOException e) {
+
+            Log.e("login activity", "Can not read file: " + e.toString());
+        }
+
+        getCurrentParentUser();
         startTimer();
         startTimer1();
-
+        startTimer2();
         return START_STICKY;
     }
 
@@ -178,13 +227,13 @@ public class CheckerService extends Service {
         }
     }
 
-    private Timer timer, timer1;
-    private TimerTask timerTask, timerTask1;
-    long oldTime=0, oldTime1=0;
+    private Timer timer, timer1, timer2;
+    private TimerTask timerTask, timerTask1, timerTask2;
+    long oldTime=0, oldTime1=0, oldTime2=0;
     public void startTimer() {
         timer = new Timer();
         initializeTimerTask();
-        timer.schedule(timerTask, 1000, 1000);
+        timer.schedule(timerTask, 5000, 5000);
     }
 
     public void initializeTimerTask() {
@@ -192,6 +241,7 @@ public class CheckerService extends Service {
             public void run() {
 
                 notifs();
+                getDeviceBlock();
 
 
 
@@ -200,9 +250,9 @@ public class CheckerService extends Service {
     }
 
     public void startTimer1() {
-        timer = new Timer();
+        timer1 = new Timer();
         initializeTimerTask1();
-        timer.schedule(timerTask1, 1000, 60000);
+        timer1.schedule(timerTask1, 10000, 60000);
     }
 
     public void initializeTimerTask1() {
@@ -217,13 +267,104 @@ public class CheckerService extends Service {
         };
     }
 
+    public void startTimer2() {
+        timer2 = new Timer();
+        initializeTimerTask2();
+        timer2.schedule(timerTask2, 7000, 5000);
+    }
+
+    public void initializeTimerTask2() {
+        timerTask2 = new TimerTask() {
+            public void run() {
+
+                if(isBlocked == 1) {
+
+                    try{
+
+                        OutputStreamWriter out = new OutputStreamWriter(ctx.openFileOutput("test.txt", ctx.MODE_PRIVATE));
+                        out.write("1");
+                        out.close();
+                        KeyguardManager.KeyguardLock key;
+                        KeyguardManager km = (KeyguardManager)getSystemService(KEYGUARD_SERVICE);
+                        key = km.newKeyguardLock("IN");
+                        key.disableKeyguard();
+                        IntentFilter filter = new IntentFilter(Intent.ACTION_BOOT_COMPLETED);
+                        filter.addAction(Intent.ACTION_TIME_TICK);
+                        mReceiver = new Broadcaster();
+                        registerReceiver(mReceiver, filter);
+
+                    }
+
+                    catch(IOException e){
+
+                        Log.e("Exception", "File write failed: " + e.toString());
+
+                    }
+                }
+                else if(isBlocked == 0){
+
+                    try{
+
+                        OutputStreamWriter out = new OutputStreamWriter(ctx.openFileOutput("test.txt", ctx.MODE_PRIVATE));
+                        out.write("0");
+                        out.close();
+                        HomeKeyLocker homeKeyLocker = new HomeKeyLocker();
+                        homeKeyLocker.unlock();
+
+                    }
+
+                    catch(IOException e){
+
+                        Log.e("Exception", "File write failed: " + e.toString());
+
+                    }
+                }
+
+
+            }
+        };
+    }
+
     public void stoptimertask() {
-        if ((timer != null) && (timer1 != null) ){
+        if ((timer != null) && (timer1 != null) && (timer2 != null) ){
             timer.cancel();
             timer1.cancel();
+            timer2.cancel();
             timer = null;
             timer1 = null;
+            timer2 = null;
         }
+    }
+
+    public void getDeviceBlock(){
+
+        DatabaseReference getdev = FirebaseDatabase.getInstance().getReference();
+        getdev.addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+
+                System.out.println("Current Parent User: "+useremail+" and Current Child User: "+splitss[0]);
+                String value = dataSnapshot.child("Users").child(useremail).child("Children").child(splitss[0]).child("BlockDevice").getValue(String.class);
+                int intval = Integer.parseInt(value);
+                System.out.println("I am currently: "+value);
+                if(intval == 0){
+
+                    isBlocked = 0;
+                }
+
+                else {
+
+                    isBlocked = 1;
+                }
+
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError databaseError) {
+
+            }
+        });
+
     }
     public void notifs(){
 
@@ -235,6 +376,22 @@ public class CheckerService extends Service {
         PendingIntent pit = PendingIntent.getActivity(getApplicationContext(), 0, it, 0);
         Context con = getApplicationContext();
 
+        final NotificationManager notificationManager = (NotificationManager)getSystemService(Context.NOTIFICATION_SERVICE);
+        CharSequence name = "Imperium";
+        String desc = "Monitoring";
+        int importance = NotificationManager.IMPORTANCE_HIGH;
+        final String cid = "Imperium1";
+
+        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+
+            NotificationChannel channel = new NotificationChannel(cid, name, importance);
+            channel.setDescription(desc);
+            notificationManager.createNotificationChannel(channel);
+
+        }
+
+        final int ncode = 1;
+
         Notification.Builder build;
 
             build = new Notification.Builder (con)
@@ -244,11 +401,10 @@ public class CheckerService extends Service {
                     .setSmallIcon(R.drawable.ic_launcher)
                     .setOngoing(true);
 
-
         Notification notifs = build.build();
 
-        NotificationManager notificationManager = (NotificationManager)getSystemService(Context.NOTIFICATION_SERVICE);
-        notificationManager.notify(1, notifs);
+
+        notificationManager.notify(ncode, notifs);
     }
 
     class PInfo {
@@ -297,25 +453,25 @@ public class CheckerService extends Service {
         String splits[] = passval.split("@");
         DatabaseReference rootRef = FirebaseDatabase.getInstance().getReference().child("Users");
         for(String datum : data) {
-            rootRef.child(user).child("Children").child(splits[0]).child("Apps").child(datum).setValue(true);
+            System.out.println("Parent User: "+useremail+" and Child: "+splits[0]);
+            rootRef.child(useremail).child("Children").child(splits[0]).child("Apps").child(datum).setValue(true);
         }
 
         return res;
     }
 
-    public void getCurrentUser(){
 
-        String split[] = passval.split("@");
+    public void getCurrentParentUser(){
 
-        DatabaseReference getuser = FirebaseDatabase.getInstance().getReference().child("Children");
-        getuser.child(split[0]).addListenerForSingleValueEvent(new ValueEventListener() {
+        DatabaseReference getuser = FirebaseDatabase.getInstance().getReference();
+        getuser.addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(DataSnapshot dataSnapshot) {
 
                 if( dataSnapshot != null){
 
-                    user = dataSnapshot.getValue(String.class);
-                    System.out.println(user);
+                    useremail = dataSnapshot.child("Current").child("currentuser").getValue(String.class);
+                    System.out.println(useremail);
 
                 }
 
