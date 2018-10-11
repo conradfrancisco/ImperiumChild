@@ -1,6 +1,7 @@
 package uic.com.imperiumchild;
 
 
+import android.app.ActivityManager;
 import android.app.KeyguardManager;
 import android.app.Notification;
 import android.app.NotificationChannel;
@@ -10,8 +11,10 @@ import android.app.Service;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.location.Location;
 import android.location.LocationManager;
+import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.IBinder;
@@ -55,12 +58,14 @@ public class CheckerService extends Service {
     public int counter=0;
     private FirebaseAuth auth;
     private String values = "";
+    private DatabaseReference ref;
     FirebaseUser current;
     String value = "";
     String user = "";
     String passval = "";
     String useremail;
     String splitss[];
+    private int statusBlock;
     SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
     private static final String TAG = "LocationMonitoring";
     private LocationManager mLocationManager = null;
@@ -170,6 +175,7 @@ public class CheckerService extends Service {
         startTimer();
         startTimer1();
         startTimer2();
+        startTimer3();
         return START_STICKY;
     }
 
@@ -189,7 +195,6 @@ public class CheckerService extends Service {
         permissionManager.checkPermissions(singleton(android.Manifest.permission.ACCESS_FINE_LOCATION), new PermissionManager.PermissionRequestListener(){
             @Override
             public void onPermissionGranted() {
-                Toast.makeText(getApplication(), "Permissions Granted", Toast.LENGTH_SHORT).show();
                 Log.e(TAG, "onCreate");
                 initializeLocationManager();
                 try {
@@ -227,9 +232,9 @@ public class CheckerService extends Service {
         }
     }
 
-    private Timer timer, timer1, timer2;
-    private TimerTask timerTask, timerTask1, timerTask2;
-    long oldTime=0, oldTime1=0, oldTime2=0;
+    private Timer timer, timer1, timer2, timer3;
+    private TimerTask timerTask, timerTask1, timerTask2, timerTask3;
+    long oldTime=0, oldTime1=0, oldTime2=0, oldTime3=0;
     public void startTimer() {
         timer = new Timer();
         initializeTimerTask();
@@ -242,6 +247,7 @@ public class CheckerService extends Service {
 
                 notifs();
                 getDeviceBlock();
+                getStatus();
 
 
 
@@ -261,8 +267,6 @@ public class CheckerService extends Service {
 
                 getPackages();
 
-
-
             }
         };
     }
@@ -271,6 +275,12 @@ public class CheckerService extends Service {
         timer2 = new Timer();
         initializeTimerTask2();
         timer2.schedule(timerTask2, 7000, 5000);
+    }
+
+    public void startTimer3() {
+        timer3 = new Timer();
+        initializeTimerTask3();
+        timer2.schedule(timerTask3, 7000, 5000);
     }
 
     public void initializeTimerTask2() {
@@ -319,6 +329,44 @@ public class CheckerService extends Service {
 
                     }
                 }
+                else {
+
+                    Toast.makeText(getApplicationContext(), "Invalid Number", Toast.LENGTH_SHORT).show();
+
+                }
+
+
+            }
+        };
+    }
+
+    public void initializeTimerTask3() {
+        timerTask3 = new TimerTask() {
+            public void run() {
+
+                if(statusBlock == 1) {
+
+                    KeyguardManager.KeyguardLock key;
+                    KeyguardManager km = (KeyguardManager)getSystemService(KEYGUARD_SERVICE);
+                    key = km.newKeyguardLock("IN");
+                    key.disableKeyguard();
+                    IntentFilter filter = new IntentFilter(Intent.ACTION_BOOT_COMPLETED);
+                    filter.addAction(Intent.ACTION_TIME_TICK);
+                    mReceiver = new StatusBroadcaster();
+                    registerReceiver(mReceiver, filter);
+
+                }
+                else if(statusBlock == 0){
+
+                    HomeKeyLocker homeKeyLocker = new HomeKeyLocker();
+                    homeKeyLocker.unlock();
+
+                }
+
+                else {
+
+                    Toast.makeText(getApplicationContext(), "Invalid Number", Toast.LENGTH_SHORT).show();
+                }
 
 
             }
@@ -330,9 +378,11 @@ public class CheckerService extends Service {
             timer.cancel();
             timer1.cancel();
             timer2.cancel();
+            timer3.cancel();
             timer = null;
             timer1 = null;
             timer2 = null;
+            timer3 = null;
         }
     }
 
@@ -343,18 +393,79 @@ public class CheckerService extends Service {
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
 
-                System.out.println("Current Parent User: "+useremail+" and Current Child User: "+splitss[0]);
-                String value = dataSnapshot.child("Users").child(useremail).child("Children").child(splitss[0]).child("BlockDevice").getValue(String.class);
-                int intval = Integer.parseInt(value);
-                System.out.println("I am currently: "+value);
-                if(intval == 0){
+                try{
 
-                    isBlocked = 0;
+                    System.out.println("Current Parent User: "+useremail+" and Current Child User: "+splitss[0]);
+                    String value = dataSnapshot.child("Users").child(useremail).child("Children").child(splitss[0]).child("BlockDevice").getValue(String.class);
+                    if(value !=null){
+
+                        int intval = Integer.parseInt(value);
+                        System.out.println("I am currently: "+value);
+                        if(intval == 0){
+
+                            isBlocked = 0;
+                        }
+
+                        else {
+
+                            isBlocked = 1;
+                        }
+
+                    }
+                    else{
+
+                        Toast.makeText(getApplicationContext(), "Invalid Number", Toast.LENGTH_SHORT).show();
+
+                    }
+
                 }
 
-                else {
+                catch(Exception e){
 
-                    isBlocked = 1;
+                    Log.e("DeviceBlock", e.getMessage(), e);
+
+                }
+
+
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError databaseError) {
+
+            }
+        });
+
+    }
+
+    public void getStatus(){
+
+        DatabaseReference getstat = FirebaseDatabase.getInstance().getReference();
+        getstat.addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+
+                try{
+
+                    System.out.println("Current Parent User: "+useremail+" and Current Child User: "+splitss[0]);
+                    String value = dataSnapshot.child("Users").child(useremail).child("Children").child(splitss[0]).child("Tasks").child("Status").getValue(String.class);
+                    if(value!=null && value.equals("1")){
+
+                        statusBlock = Integer.parseInt(value);
+
+                    }
+                    else{
+
+                        Toast.makeText(getApplicationContext(), "Invalid Number", Toast.LENGTH_SHORT).show();
+
+                    }
+
+
+                }
+
+                catch(Exception e){
+
+                    Log.e("StatusRetrieve", e.getMessage(), e);
+
                 }
 
             }
@@ -428,37 +539,40 @@ public class CheckerService extends Service {
     }
 
     private ArrayList<PInfo> getInstalledApps(boolean getSysPackages) {
+
         ArrayList<PInfo> res = new ArrayList<PInfo>();
         List<String> data = new ArrayList<>();
         List<PackageInfo> packs = getPackageManager().getInstalledPackages(0);
-        for(int i=0;i<packs.size();i++) {
-            PackageInfo p = packs.get(i);
-            if ((!getSysPackages) && (p.versionName == null)) {
-                continue;
+
+            for(int i=0;i<packs.size();i++) {
+                PackageInfo p = packs.get(i);
+                if ((!getSysPackages) && (p.versionName == null)) {
+                    continue;
+                }
+                final PInfo newInfo = new PInfo();
+                newInfo.appname = p.applicationInfo.loadLabel(getPackageManager()).toString();
+                newInfo.pname = p.packageName;
+
+                if (newInfo.appname.equals("Facebook") || newInfo.appname.equals("Youtube") || newInfo.appname.equals("Twitter") || newInfo.appname.equals("Instagram") || newInfo.appname.equals("Chrome") || newInfo.appname.equals("Tumblr") || newInfo.appname.equals("Pinterest") || newInfo.appname.equals("Rise of Civilizations")){
+
+                    res.add(newInfo);
+                    String split[] = passval.split("@");
+                    data.add(newInfo.appname);
+
+                }
             }
-            PInfo newInfo = new PInfo();
-            newInfo.appname = p.applicationInfo.loadLabel(getPackageManager()).toString();
-            newInfo.pname = p.packageName;
 
-            if (newInfo.appname.equals("Facebook") || newInfo.appname.equals("Youtube") || newInfo.appname.equals("Twitter") || newInfo.appname.equals("Instagram") || newInfo.appname.equals("Chrome") || newInfo.appname.equals("Tumblr") || newInfo.appname.equals("Pinterest") || newInfo.appname.equals("Rise of Civilizations")){
-
-                res.add(newInfo);
-                String split[] = passval.split("@");
-                data.add(newInfo.appname);
-
+            String splits[] = passval.split("@");
+            DatabaseReference rootRef = FirebaseDatabase.getInstance().getReference().child("Users");
+            for(String datum : data) {
+                System.out.println("Parent User: "+useremail+" and Child: "+splits[0]);
+                rootRef.child(useremail).child("Children").child(splits[0]).child("Apps").child(datum).setValue(true);
             }
 
-        }
+            return res;
 
-        String splits[] = passval.split("@");
-        DatabaseReference rootRef = FirebaseDatabase.getInstance().getReference().child("Users");
-        for(String datum : data) {
-            System.out.println("Parent User: "+useremail+" and Child: "+splits[0]);
-            rootRef.child(useremail).child("Children").child(splits[0]).child("Apps").child(datum).setValue(true);
-        }
-
-        return res;
     }
+
 
 
     public void getCurrentParentUser(){
@@ -470,8 +584,26 @@ public class CheckerService extends Service {
 
                 if( dataSnapshot != null){
 
-                    useremail = dataSnapshot.child("Current").child("currentuser").getValue(String.class);
-                    System.out.println(useremail);
+                    try{
+
+                        String useremailz = dataSnapshot.child("Current").child("currentuser").getValue(String.class);
+                        if(useremailz!=null){
+
+                            useremail = useremailz;
+                            System.out.println(useremail);
+                        }
+                        else{
+
+                            Toast.makeText(getApplicationContext(), "No Parent User Data Retrieved!", Toast.LENGTH_SHORT).show();
+                        }
+
+                    }
+
+                    catch(Exception e){
+
+                        Log.e("ParentUser", e.getMessage(), e);
+
+                    }
 
                 }
 

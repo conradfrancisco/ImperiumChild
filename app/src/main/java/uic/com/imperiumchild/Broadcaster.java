@@ -18,7 +18,7 @@ public class Broadcaster extends BroadcastReceiver {
     @Override
     public void onReceive(Context context, Intent intent) {
 
-        Log.d("OnRecieve", "Recieve Intent");
+        Log.d("STARTED", "Recieve Intent");
         try {
             InputStream inputStream = context.openFileInput("test.txt");
 

@@ -6,6 +6,7 @@ import android.content.ComponentName;
 import android.content.Intent;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
+import android.util.Log;
 import android.view.KeyEvent;
 import android.view.View;
 import android.view.WindowManager;
@@ -65,17 +66,11 @@ public class LockScreenActivity extends Activity {
             devicePolicyManager.lockNow();
 
         }
-        else {
+        else if (!active) {
 
             Intent intent = new Intent(DevicePolicyManager.ACTION_ADD_DEVICE_ADMIN);
             intent.putExtra(DevicePolicyManager.EXTRA_DEVICE_ADMIN, compName);
             intent.putExtra(DevicePolicyManager.EXTRA_ADD_EXPLANATION, "You need me :)");
-            makeFullScreen();
-            startService(new Intent(this, CheckerService.class));
-            setContentView(R.layout.activity_lockscreen);
-            HomeKeyLocker homeKeyLocker = new HomeKeyLocker();
-            homeKeyLocker.lock(this);
-            devicePolicyManager.lockNow();
             startActivityForResult(intent, RESULT_ENABLE);
 
         }
@@ -89,6 +84,12 @@ public class LockScreenActivity extends Activity {
             case RESULT_ENABLE :
                 if (resultCode == Activity.RESULT_OK) {
 
+                    makeFullScreen();
+                    startService(new Intent(this, CheckerService.class));
+                    setContentView(R.layout.activity_lockscreen);
+                    HomeKeyLocker homeKeyLocker = new HomeKeyLocker();
+                    homeKeyLocker.lock(this);
+                    devicePolicyManager.lockNow();
                     Toast.makeText(LockScreenActivity.this, "Admin Device Features enabled!", Toast.LENGTH_SHORT).show();
 
 
@@ -149,23 +150,43 @@ public class LockScreenActivity extends Activity {
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
 
-                System.out.println("Current Parent User: "+useremail+" and Current Child User: "+splitss[0]);
-                String value = dataSnapshot.child("Users").child(useremail).child("Children").child(splitss[0]).child("BlockDevice").getValue(String.class);
-                int intval = Integer.parseInt(value);
-                System.out.println("Ako karon kay: "+value);
-                if(intval == 0){
+                try{
 
-                    isBlocked = 0;
-                    HomeKeyLocker homeKeyLocker = new HomeKeyLocker();
-                    homeKeyLocker.unlock();
-//                    startActivity(new Intent(LockScreenActivity.this, Login.class));
-                    finish();
+                    System.out.println("Current Parent User: "+useremail+" and Current Child User: "+splitss[0]);
+                    String value = dataSnapshot.child("Users").child(useremail).child("Children").child(splitss[0]).child("BlockDevice").getValue(String.class);
+                    if (value != null) {
+
+                        int intval = Integer.parseInt(value);
+                        System.out.println("Ako karon kay: "+value);
+                        if(intval == 0){
+
+                            isBlocked = 0;
+                            HomeKeyLocker homeKeyLocker = new HomeKeyLocker();
+                            homeKeyLocker.unlock();
+                            finish();
+                        }
+
+                        else {
+
+                            isBlocked = 1;
+                        }
+
+                    }
+
+                    else {
+
+                        Toast.makeText(getApplicationContext(), "Invalid Number", Toast.LENGTH_SHORT).show();
+
+                    }
+
                 }
 
-                else {
+                catch(Exception e){
 
-                    isBlocked = 1;
+                    Log.e("LockDeviceBlock", e.getMessage(), e);
+
                 }
+
 
             }
 
@@ -186,8 +207,27 @@ public class LockScreenActivity extends Activity {
 
                 if( dataSnapshot != null){
 
-                    useremail = dataSnapshot.child("Current").child("currentuser").getValue(String.class);
-                    System.out.println(useremail);
+                    try{
+
+                        String us = dataSnapshot.child("Current").child("currentuser").getValue(String.class);
+                        if(us!=null){
+
+                            useremail = us;
+                            System.out.println(useremail);
+                        }
+                        else{
+
+                            Toast.makeText(getApplicationContext(), "No Current Parent Found", Toast.LENGTH_SHORT).show();
+                        }
+
+
+                    }
+
+                    catch(Exception e){
+
+                        Log.e("LockParentUser", e.getMessage(), e);
+
+                    }
 
                 }
 

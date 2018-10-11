@@ -2,5 +2,6 @@
     <string name="app_name">ImperiumMonitoring</string>
     <string name="auth_failed">Authentication Failed</string>
     <string name="enter">Please enter the Email Address you have inputted on Child Addition.</string>
-    <string name="blocked">Your device has been currently been disabled by your Parents.</string>
+    <string name="blocked">Your device has been currently disabled by your Parents.</string>
+    <string name="status">Your Parent has assigned you a New Task:</string>
 </resources>

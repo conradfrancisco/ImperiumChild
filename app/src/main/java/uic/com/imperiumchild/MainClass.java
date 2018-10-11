@@ -5,6 +5,9 @@ import android.app.ActivityManager;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
+import android.util.Log;
+import android.widget.Toast;
+
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.DataSnapshot;
@@ -65,10 +68,27 @@ public class MainClass extends Activity {
 
                 if( dataSnapshot != null){
 
-                    user = dataSnapshot.getValue(String.class);
-                    System.out.println(user);
-                    passvalue = user;
+                    try{
 
+                        String nauser = dataSnapshot.getValue(String.class);
+                        if(nauser!=null){
+
+                            user = nauser;
+                            System.out.println(user);
+                            passvalue = user;
+
+                        }
+                        else{
+
+                            Toast.makeText(getApplicationContext(), "No Current Parent Found", Toast.LENGTH_SHORT).show();
+                        }
+
+                    }
+
+                    catch(Exception e){
+
+                        Log.e("MainClass", e.getMessage(), e);
+                    }
                 }
 
             }

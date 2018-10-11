@@ -29,6 +29,12 @@ import com.google.firebase.auth.FirebaseAuthUserCollisionException;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 
+import java.io.BufferedReader;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+
 /**
  * Created by Conrad Francisco Jr on 6/12/2018.
  */
@@ -37,6 +43,8 @@ public class Login extends AppCompatActivity {
 
     private FirebaseAuth auth;
     boolean isConnected = true;
+    private String value = "";
+    Context context = this;
     private boolean monitoringConnectivity = false;
     private EditText inputuser;
     private ConstraintLayout constraint;
@@ -50,7 +58,6 @@ public class Login extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState){
     super.onCreate(savedInstanceState);
     setContentView(R.layout.activity_login);
-
     auth = FirebaseAuth.getInstance();
     constraint = (ConstraintLayout) findViewById(R.id.coordinatorlogin);
 
