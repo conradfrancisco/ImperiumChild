@@ -14,6 +14,8 @@ public class Splash extends AppCompatActivity {
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        Intent intent1 = new Intent(this, CheckerService.class);
+        stopService(intent1);
         Intent intent = new Intent(this, Login.class);
         startActivity(intent);
         finish();

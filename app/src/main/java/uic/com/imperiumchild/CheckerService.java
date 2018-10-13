@@ -414,7 +414,7 @@ public class CheckerService extends Service {
                     }
                     else{
 
-                        Toast.makeText(getApplicationContext(), "Invalid Number", Toast.LENGTH_SHORT).show();
+                        Log.d("DeviceBlock", "No Value has been RETRIEVED");
 
                     }
 
@@ -448,12 +448,12 @@ public class CheckerService extends Service {
 
                     System.out.println("Current Parent User: "+useremail+" and Current Child User: "+splitss[0]);
                     String value = dataSnapshot.child("Users").child(useremail).child("Children").child(splitss[0]).child("Tasks").child("Status").getValue(String.class);
-                    if(value!=null && value.equals("1")){
+                    if(value!=null && value.equals("1") || value.equals("0")){
 
                         statusBlock = Integer.parseInt(value);
 
                     }
-                    else{
+                    else {
 
                         Toast.makeText(getApplicationContext(), "Invalid Number", Toast.LENGTH_SHORT).show();
 
