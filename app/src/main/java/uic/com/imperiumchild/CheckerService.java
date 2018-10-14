@@ -631,7 +631,7 @@ public class CheckerService extends Service {
 
                         try{
 
-                            String useremailz = dataSnapshot.child("Current").child(splitss[0]).getValue(String.class);
+                            String useremailz = dataSnapshot.child("CurrentParent").child(splitss[0]).getValue(String.class);
                             if(useremailz!=null){
 
                                 useremail = useremailz;

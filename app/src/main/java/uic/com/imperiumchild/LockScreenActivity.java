@@ -196,7 +196,7 @@ public class LockScreenActivity extends Activity {
 
                         else {
 
-                            Toast.makeText(getApplicationContext(), "Invalid Number", Toast.LENGTH_SHORT).show();
+                            Log.d("GetStatus", "Invalid Number");
 
                         }
 
@@ -248,7 +248,7 @@ public class LockScreenActivity extends Activity {
                             }
                             else{
 
-                                Toast.makeText(getApplicationContext(), "No Current Parent Found", Toast.LENGTH_SHORT).show();
+                                Log.e("GetParent", "No Current Parent User Found");
                             }
 
 
