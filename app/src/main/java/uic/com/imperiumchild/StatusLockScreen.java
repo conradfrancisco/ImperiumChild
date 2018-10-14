@@ -282,7 +282,7 @@ public class StatusLockScreen extends Activity {
                         }
                         else{
 
-                            Toast.makeText(getApplicationContext(), "No Data Recieved!", Toast.LENGTH_SHORT).show();
+                            Log.d("ParentUser", "No Current Parent User Retrieved");
 
                         }
 
