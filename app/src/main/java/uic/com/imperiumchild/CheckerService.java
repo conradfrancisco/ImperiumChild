@@ -135,47 +135,56 @@ public class CheckerService extends Service {
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         super.onStartCommand(intent, flags, startId);
+        try{
 
-        auth = FirebaseAuth.getInstance();
-        current = auth.getCurrentUser();
-        passval = current.getEmail();
-        splitss = passval.split("@");
+            auth = FirebaseAuth.getInstance();
+            current = auth.getCurrentUser();
+            passval = current.getEmail();
+            splitss = passval.split("@");
 
-        try {
-            InputStream inputStream = ctx.openFileInput("test.txt");
+            try {
+                InputStream inputStream = ctx.openFileInput("test.txt");
 
-            if ( inputStream != null ) {
-                InputStreamReader inputStreamReader = new InputStreamReader(inputStream);
-                BufferedReader bufferedReader = new BufferedReader(inputStreamReader);
-                String receiveString = "";
-                StringBuilder stringBuilder = new StringBuilder();
+                if ( inputStream != null ) {
+                    InputStreamReader inputStreamReader = new InputStreamReader(inputStream);
+                    BufferedReader bufferedReader = new BufferedReader(inputStreamReader);
+                    String receiveString = "";
+                    StringBuilder stringBuilder = new StringBuilder();
 
-                while ( (receiveString = bufferedReader.readLine()) != null ) {
-                    stringBuilder.append(receiveString);
-                    Log.d("CheckerService", "Reading from Text File");
+                    while ( (receiveString = bufferedReader.readLine()) != null ) {
+                        stringBuilder.append(receiveString);
+                        Log.d("CheckerService", "Reading from Text File");
+                    }
+
+                    inputStream.close();
+                    values = stringBuilder.toString();
+                    isBlocked = Integer.parseInt(values);
+                    System.out.println(value);
                 }
-
-                inputStream.close();
-                values = stringBuilder.toString();
-                isBlocked = Integer.parseInt(values);
-                System.out.println(value);
             }
+            catch (FileNotFoundException e) {
+
+                Log.e("login activity", "File not found: " + e.toString());
+            }
+
+            catch (IOException e) {
+
+                Log.e("login activity", "Can not read file: " + e.toString());
+            }
+
+            getCurrentParentUser();
+            startTimer();
+            startTimer1();
+            startTimer2();
+            startTimer3();
         }
-        catch (FileNotFoundException e) {
 
-            Log.e("login activity", "File not found: " + e.toString());
+        catch(Exception e){
+
+            Log.e("onStartCommandChecker", e.getMessage(), e);
+
         }
 
-        catch (IOException e) {
-
-            Log.e("login activity", "Can not read file: " + e.toString());
-        }
-
-        getCurrentParentUser();
-        startTimer();
-        startTimer1();
-        startTimer2();
-        startTimer3();
         return START_STICKY;
     }
 
@@ -287,55 +296,63 @@ public class CheckerService extends Service {
         timerTask2 = new TimerTask() {
             public void run() {
 
-                if(isBlocked == 1) {
+                try{
 
-                    try{
+                    if(isBlocked == 1) {
 
-                        OutputStreamWriter out = new OutputStreamWriter(ctx.openFileOutput("test.txt", ctx.MODE_PRIVATE));
-                        out.write("1");
-                        out.close();
-                        KeyguardManager.KeyguardLock key;
-                        KeyguardManager km = (KeyguardManager)getSystemService(KEYGUARD_SERVICE);
-                        key = km.newKeyguardLock("IN");
-                        key.disableKeyguard();
-                        IntentFilter filter = new IntentFilter(Intent.ACTION_BOOT_COMPLETED);
-                        filter.addAction(Intent.ACTION_TIME_TICK);
-                        mReceiver = new Broadcaster();
-                        registerReceiver(mReceiver, filter);
+                        try{
+
+                            OutputStreamWriter out = new OutputStreamWriter(ctx.openFileOutput("test.txt", ctx.MODE_PRIVATE));
+                            out.write("1");
+                            out.close();
+                            KeyguardManager.KeyguardLock key;
+                            KeyguardManager km = (KeyguardManager)getSystemService(KEYGUARD_SERVICE);
+                            key = km.newKeyguardLock("IN");
+                            key.disableKeyguard();
+                            IntentFilter filter = new IntentFilter(Intent.ACTION_BOOT_COMPLETED);
+                            filter.addAction(Intent.ACTION_TIME_TICK);
+                            mReceiver = new Broadcaster();
+                            registerReceiver(mReceiver, filter);
+
+                        }
+
+                        catch(IOException e){
+
+                            Log.e("Exception", "File write failed: " + e.toString());
+
+                        }
+                    }
+                    else if(isBlocked == 0){
+
+                        try{
+
+                            OutputStreamWriter out = new OutputStreamWriter(ctx.openFileOutput("test.txt", ctx.MODE_PRIVATE));
+                            out.write("0");
+                            out.close();
+                            HomeKeyLocker homeKeyLocker = new HomeKeyLocker();
+                            homeKeyLocker.unlock();
+
+                        }
+
+                        catch(IOException e){
+
+                            Log.e("Exception", "File write failed: " + e.toString());
+
+                        }
+                    }
+                    else {
+
+                        Log.d("InvalidNumber", "Invalid Number Retrieved");
 
                     }
 
-                    catch(IOException e){
-
-                        Log.e("Exception", "File write failed: " + e.toString());
-
-                    }
                 }
-                else if(isBlocked == 0){
 
-                    try{
+                catch(Exception e){
 
-                        OutputStreamWriter out = new OutputStreamWriter(ctx.openFileOutput("test.txt", ctx.MODE_PRIVATE));
-                        out.write("0");
-                        out.close();
-                        HomeKeyLocker homeKeyLocker = new HomeKeyLocker();
-                        homeKeyLocker.unlock();
-
-                    }
-
-                    catch(IOException e){
-
-                        Log.e("Exception", "File write failed: " + e.toString());
-
-                    }
-                }
-                else {
-
-                    Toast.makeText(getApplicationContext(), "Invalid Number", Toast.LENGTH_SHORT).show();
+                    Log.e("onDeviceBlockPrimary", e.getMessage(), e);
 
                 }
-
-
             }
         };
     }
@@ -344,31 +361,39 @@ public class CheckerService extends Service {
         timerTask3 = new TimerTask() {
             public void run() {
 
-                if(statusBlock == 1) {
+                try{
 
-                    KeyguardManager.KeyguardLock key;
-                    KeyguardManager km = (KeyguardManager)getSystemService(KEYGUARD_SERVICE);
-                    key = km.newKeyguardLock("IN");
-                    key.disableKeyguard();
-                    IntentFilter filter = new IntentFilter(Intent.ACTION_BOOT_COMPLETED);
-                    filter.addAction(Intent.ACTION_TIME_TICK);
-                    mReceiver = new StatusBroadcaster();
-                    registerReceiver(mReceiver, filter);
+                    if(statusBlock == 1) {
+
+                        KeyguardManager.KeyguardLock key;
+                        KeyguardManager km = (KeyguardManager)getSystemService(KEYGUARD_SERVICE);
+                        key = km.newKeyguardLock("IN");
+                        key.disableKeyguard();
+                        IntentFilter filter = new IntentFilter(Intent.ACTION_BOOT_COMPLETED);
+                        filter.addAction(Intent.ACTION_TIME_TICK);
+                        mReceiver = new StatusBroadcaster();
+                        registerReceiver(mReceiver, filter);
+
+                    }
+                    else if(statusBlock == 0){
+
+                        HomeKeyLocker homeKeyLocker = new HomeKeyLocker();
+                        homeKeyLocker.unlock();
+
+                    }
+
+                    else {
+
+                        Log.d("InvalidNumber", "Invalid Number Retrieved");
+                    }
 
                 }
-                else if(statusBlock == 0){
 
-                    HomeKeyLocker homeKeyLocker = new HomeKeyLocker();
-                    homeKeyLocker.unlock();
+                catch(Exception e){
+
+                    Log.e("onDeviceBlock", e.getMessage(), e);
 
                 }
-
-                else {
-
-                    Toast.makeText(getApplicationContext(), "Invalid Number", Toast.LENGTH_SHORT).show();
-                }
-
-
             }
         };
     }
@@ -388,95 +413,114 @@ public class CheckerService extends Service {
 
     public void getDeviceBlock(){
 
-        DatabaseReference getdev = FirebaseDatabase.getInstance().getReference();
-        getdev.addListenerForSingleValueEvent(new ValueEventListener() {
-            @Override
-            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+        try{
 
-                try{
+            DatabaseReference getdev = FirebaseDatabase.getInstance().getReference();
+            getdev.addListenerForSingleValueEvent(new ValueEventListener() {
+                @Override
+                public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
 
-                    System.out.println("Current Parent User: "+useremail+" and Current Child User: "+splitss[0]);
-                    String value = dataSnapshot.child("Users").child(useremail).child("Children").child(splitss[0]).child("BlockDevice").getValue(String.class);
-                    if(value !=null){
+                    try{
 
-                        int intval = Integer.parseInt(value);
-                        System.out.println("I am currently: "+value);
-                        if(intval == 0){
+                        System.out.println("Current Parent User: "+useremail+" and Current Child User: "+splitss[0]);
+                        String value = dataSnapshot.child("Users").child(useremail).child("Children").child(splitss[0]).child("BlockDevice").getValue(String.class);
+                        if(value !=null){
 
-                            isBlocked = 0;
+                            int intval = Integer.parseInt(value);
+                            System.out.println("I am currently: "+value);
+                            if(intval == 0){
+
+                                isBlocked = 0;
+                            }
+
+                            else {
+
+                                isBlocked = 1;
+                            }
+
                         }
+                        else{
 
-                        else {
+                            Log.d("DeviceBlock", "No Value has been RETRIEVED");
 
-                            isBlocked = 1;
                         }
 
                     }
-                    else{
 
-                        Log.d("DeviceBlock", "No Value has been RETRIEVED");
+                    catch(Exception e){
+
+                        Log.e("DeviceBlock", e.getMessage(), e);
 
                     }
 
-                }
-
-                catch(Exception e){
-
-                    Log.e("DeviceBlock", e.getMessage(), e);
 
                 }
 
+                @Override
+                public void onCancelled(@NonNull DatabaseError databaseError) {
 
-            }
+                }
+            });
 
-            @Override
-            public void onCancelled(@NonNull DatabaseError databaseError) {
+        }
 
-            }
-        });
+        catch(Exception e){
+
+            Log.e("onGetDeviceBlock", e.getMessage(), e);
+
+        }
 
     }
 
     public void getStatus(){
 
-        DatabaseReference getstat = FirebaseDatabase.getInstance().getReference();
-        getstat.addListenerForSingleValueEvent(new ValueEventListener() {
-            @Override
-            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+        try{
 
-                try{
+            DatabaseReference getstat = FirebaseDatabase.getInstance().getReference();
+            getstat.addListenerForSingleValueEvent(new ValueEventListener() {
+                @Override
+                public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
 
-                    System.out.println("Current Parent User: "+useremail+" and Current Child User: "+splitss[0]);
-                    String value = dataSnapshot.child("Users").child(useremail).child("Children").child(splitss[0]).child("Tasks").child("Status").getValue(String.class);
-                    if(value!=null && value.equals("1") || value.equals("0")){
+                    try{
 
-                        statusBlock = Integer.parseInt(value);
+                        System.out.println("Current Parent User: "+useremail+" and Current Child User: "+splitss[0]);
+                        String value = dataSnapshot.child("Users").child(useremail).child("Children").child(splitss[0]).child("Tasks").child("Status").getValue(String.class);
+                        if(value!=null && value.equals("1") || value.equals("0")){
+
+                            statusBlock = Integer.parseInt(value);
+
+                        }
+                        else {
+
+                            Log.d("OnGetStatus", "Invalid Status Number Retrieved");
+
+                        }
+
 
                     }
-                    else {
 
-                        Toast.makeText(getApplicationContext(), "Invalid Number", Toast.LENGTH_SHORT).show();
+                    catch(Exception e){
+
+                        Log.e("StatusRetrieve", e.getMessage(), e);
 
                     }
-
 
                 }
 
-                catch(Exception e){
-
-                    Log.e("StatusRetrieve", e.getMessage(), e);
+                @Override
+                public void onCancelled(@NonNull DatabaseError databaseError) {
 
                 }
+            });
+        }
 
-            }
+        catch(Exception e){
 
-            @Override
-            public void onCancelled(@NonNull DatabaseError databaseError) {
+            Log.e("onGetStatus", e.getMessage(), e);
 
-            }
-        });
-
+        }
     }
+
     public void notifs(){
 
         IntentFilter ifl = new IntentFilter();
@@ -540,9 +584,9 @@ public class CheckerService extends Service {
 
     private ArrayList<PInfo> getInstalledApps(boolean getSysPackages) {
 
-        ArrayList<PInfo> res = new ArrayList<PInfo>();
-        List<String> data = new ArrayList<>();
-        List<PackageInfo> packs = getPackageManager().getInstalledPackages(0);
+            ArrayList<PInfo> res = new ArrayList<PInfo>();
+            List<String> data = new ArrayList<>();
+            List<PackageInfo> packs = getPackageManager().getInstalledPackages(0);
 
             for(int i=0;i<packs.size();i++) {
                 PackageInfo p = packs.get(i);
@@ -570,53 +614,61 @@ public class CheckerService extends Service {
             }
 
             return res;
-
     }
 
 
 
     public void getCurrentParentUser(){
 
-        DatabaseReference getuser = FirebaseDatabase.getInstance().getReference();
-        getuser.addListenerForSingleValueEvent(new ValueEventListener() {
-            @Override
-            public void onDataChange(DataSnapshot dataSnapshot) {
+        try{
 
-                if( dataSnapshot != null){
+            DatabaseReference getuser = FirebaseDatabase.getInstance().getReference();
+            getuser.addListenerForSingleValueEvent(new ValueEventListener() {
+                @Override
+                public void onDataChange(DataSnapshot dataSnapshot) {
 
-                    try{
+                    if( dataSnapshot != null){
 
-                        String useremailz = dataSnapshot.child("Current").child("currentuser").getValue(String.class);
-                        if(useremailz!=null){
+                        try{
 
-                            useremail = useremailz;
-                            System.out.println(useremail);
+                            String useremailz = dataSnapshot.child("Current").child(splitss[0]).getValue(String.class);
+                            if(useremailz!=null){
+
+                                useremail = useremailz;
+                                System.out.println(useremail);
+                            }
+                            else{
+
+                                Log.d("GetParentUser", "No Parent User Retrieved");
+                            }
+
                         }
-                        else{
 
-                            Toast.makeText(getApplicationContext(), "No Parent User Data Retrieved!", Toast.LENGTH_SHORT).show();
+                        catch(Exception e){
+
+                            Log.e("ParentUser", e.getMessage(), e);
+
                         }
-
-                    }
-
-                    catch(Exception e){
-
-                        Log.e("ParentUser", e.getMessage(), e);
 
                     }
 
                 }
 
-            }
-
-            @Override
-            public void onCancelled(DatabaseError databaseError) {
+                @Override
+                public void onCancelled(DatabaseError databaseError) {
 
 
 
-            }
-        });
+                }
+            });
 
+        }
+
+        catch(Exception e){
+
+            Log.e("GetParentUser", e.getMessage(), e);
+
+        }
     }
 
 

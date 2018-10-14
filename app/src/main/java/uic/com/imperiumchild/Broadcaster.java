@@ -18,56 +18,66 @@ public class Broadcaster extends BroadcastReceiver {
     @Override
     public void onReceive(Context context, Intent intent) {
 
-        Log.d("STARTED", "Recieve Intent");
-        try {
-            InputStream inputStream = context.openFileInput("test.txt");
+        try{
 
-            if ( inputStream != null ) {
-                InputStreamReader inputStreamReader = new InputStreamReader(inputStream);
-                BufferedReader bufferedReader = new BufferedReader(inputStreamReader);
-                String receiveString = "";
-                StringBuilder stringBuilder = new StringBuilder();
+            Log.d("STARTED", "Receive Intent");
+            try {
+                InputStream inputStream = context.openFileInput("test.txt");
 
-                while ( (receiveString = bufferedReader.readLine()) != null ) {
-                    stringBuilder.append(receiveString);
-                    Log.d("OnRecieve", "Reading from Text File");
+                if ( inputStream != null ) {
+                    InputStreamReader inputStreamReader = new InputStreamReader(inputStream);
+                    BufferedReader bufferedReader = new BufferedReader(inputStreamReader);
+                    String receiveString = "";
+                    StringBuilder stringBuilder = new StringBuilder();
+
+                    while ( (receiveString = bufferedReader.readLine()) != null ) {
+                        stringBuilder.append(receiveString);
+                        Log.d("OnReceive", "Reading from Text File");
+                    }
+
+                    inputStream.close();
+                    value = stringBuilder.toString();
+                    System.out.println(value);
+                }
+            }
+            catch (FileNotFoundException e) {
+
+                Log.e("login activity", "File not found: " + e.toString());
+            }
+
+            catch (IOException e) {
+
+                Log.e("login activity", "Can not read file: " + e.toString());
+            }
+
+            if(value != null){
+
+                if(value == "1"){
+
+                    Log.d("OnReceive", "Startling LOCK SCREEN");
+                    start_lockscreen(context);
+
                 }
 
-                inputStream.close();
-                value = stringBuilder.toString();
-                System.out.println(value);
             }
-        }
-        catch (FileNotFoundException e) {
 
-            Log.e("login activity", "File not found: " + e.toString());
-        }
+            Log.d("OnReceive", "Starting Service");
+            context.startService(new Intent(context, CheckerService.class));
 
-        catch (IOException e) {
+            if(Intent.ACTION_TIME_TICK.equals(intent.getAction())){
 
-            Log.e("login activity", "Can not read file: " + e.toString());
-        }
-
-        if(value != null){
-
-            if(value == "1"){
-
-                Log.d("OnRecieve", "Startling LOCK SCREEN");
+                Log.d("OnReceive with Intent", "Startling LOCK SCREEN");
                 start_lockscreen(context);
 
             }
+        }
+
+        catch(Exception e){
+
+            Log.e("onReceiveLockScreen", e.getMessage(), e);
 
         }
 
-        Log.d("OnRecieve", "Starting Service");
-        context.startService(new Intent(context, CheckerService.class));
-
-        if(Intent.ACTION_TIME_TICK.equals(intent.getAction())){
-
-            Log.d("OnRecieve with Intent", "Startling LOCK SCREEN");
-            start_lockscreen(context);
-
-        }
     }
 
     private void start_lockscreen(Context context) {

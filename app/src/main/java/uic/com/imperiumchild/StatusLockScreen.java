@@ -68,24 +68,34 @@ public class StatusLockScreen extends Activity {
         devicePolicyManager = (DevicePolicyManager) getSystemService(DEVICE_POLICY_SERVICE);
         startTimer();
         final Boolean active = devicePolicyManager.isAdminActive(compName);
+        try{
 
-        if(active) {
+            if(active) {
 
-            makeFullScreen();
-            startService(new Intent(StatusLockScreen.this, CheckerService.class));
-            HomeKeyLocker homeKeyLocker = new HomeKeyLocker();
-            homeKeyLocker.lock(StatusLockScreen.this);
-            devicePolicyManager.lockNow();
+                makeFullScreen();
+                startService(new Intent(StatusLockScreen.this, CheckerService.class));
+                HomeKeyLocker homeKeyLocker = new HomeKeyLocker();
+                homeKeyLocker.lock(StatusLockScreen.this);
+                devicePolicyManager.lockNow();
+            }
+
+            else if (!active) {
+
+                Intent intent = new Intent(DevicePolicyManager.ACTION_ADD_DEVICE_ADMIN);
+                intent.putExtra(DevicePolicyManager.EXTRA_DEVICE_ADMIN, compName);
+                intent.putExtra(DevicePolicyManager.EXTRA_ADD_EXPLANATION, "You need me :)");
+                startActivityForResult(intent, RESULT_ENABLE);
+
+            }
+
         }
 
-        else if (!active) {
+        catch(Exception e){
 
-             Intent intent = new Intent(DevicePolicyManager.ACTION_ADD_DEVICE_ADMIN);
-             intent.putExtra(DevicePolicyManager.EXTRA_DEVICE_ADMIN, compName);
-             intent.putExtra(DevicePolicyManager.EXTRA_ADD_EXPLANATION, "You need me :)");
-             startActivityForResult(intent, RESULT_ENABLE);
+            Log.e("StartStatusLock", e.getMessage(), e);
 
         }
+
         accom.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -101,24 +111,34 @@ public class StatusLockScreen extends Activity {
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        switch(requestCode) {
-            case RESULT_ENABLE :
-                if (resultCode == Activity.RESULT_OK) {
+        try{
 
-                    makeFullScreen();
-                    startService(new Intent(this, CheckerService.class));
-                    HomeKeyLocker homeKeyLocker = new HomeKeyLocker();
-                    homeKeyLocker.lock(this);
-                    devicePolicyManager.lockNow();
-                    Toast.makeText(StatusLockScreen.this, "Admin Device Features enabled!", Toast.LENGTH_SHORT).show();
+            switch(requestCode) {
+                case RESULT_ENABLE :
+                    if (resultCode == Activity.RESULT_OK) {
+
+                        makeFullScreen();
+                        startService(new Intent(this, CheckerService.class));
+                        HomeKeyLocker homeKeyLocker = new HomeKeyLocker();
+                        homeKeyLocker.lock(this);
+                        devicePolicyManager.lockNow();
+                        Toast.makeText(StatusLockScreen.this, "Admin Device Features enabled!", Toast.LENGTH_SHORT).show();
 
 
-                } else {
+                    } else {
 
-                    Toast.makeText(StatusLockScreen.this, "Problem to enable the Admin Device features", Toast.LENGTH_SHORT).show();
+                        Toast.makeText(StatusLockScreen.this, "Problem to enable the Admin Device features", Toast.LENGTH_SHORT).show();
 
-                }
-                break;
+                    }
+                    break;
+            }
+
+        }
+
+        catch(Exception e){
+
+            Log.e("ResultStatusLock", e.getMessage(), e);
+
         }
 
         super.onActivityResult(requestCode, resultCode, data);
@@ -133,75 +153,82 @@ public class StatusLockScreen extends Activity {
 
     public void getCurrentParentUser(){
 
-        DatabaseReference getuser = FirebaseDatabase.getInstance().getReference();
-        getuser.addListenerForSingleValueEvent(new ValueEventListener() {
-            @Override
-            public void onDataChange(DataSnapshot dataSnapshot) {
+        try{
 
-                if( dataSnapshot != null){
+            DatabaseReference getuser = FirebaseDatabase.getInstance().getReference();
+            getuser.addListenerForSingleValueEvent(new ValueEventListener() {
+                @Override
+                public void onDataChange(DataSnapshot dataSnapshot) {
 
-                    try{
+                    if( dataSnapshot != null){
 
-                        String useremailz = dataSnapshot.child("Current").child("currentuser").getValue(String.class);
-                        if (useremailz != null) {
+                        try{
 
-                            useremail = useremailz;
-                            System.out.println(useremail);
+                            String useremailz = dataSnapshot.child("Current").child(splitss[0]).getValue(String.class);
+                            if (useremailz != null) {
 
-                            DatabaseReference getusers = FirebaseDatabase.getInstance().getReference();
-                            getusers.addListenerForSingleValueEvent(new ValueEventListener() {
-                                @Override
-                                public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                                useremail = useremailz;
+                                System.out.println(useremail);
 
-                                    String usertasksz = dataSnapshot.child("Users").child(useremail).child("Children").child(splitss[0]).child("Tasks").child("To-Do").getValue(String.class);
-                                    if(usertasksz!=null){
+                                DatabaseReference getusers = FirebaseDatabase.getInstance().getReference();
+                                getusers.addListenerForSingleValueEvent(new ValueEventListener() {
+                                    @Override
+                                    public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
 
-                                        usertasks = usertasksz;
-                                        System.out.println("Current Task is: "+usertasks);
-                                        assigned.setText(usertasks);
+                                        String usertasksz = dataSnapshot.child("Users").child(useremail).child("Children").child(splitss[0]).child("Tasks").child("To-Do").getValue(String.class);
+                                        if(usertasksz!=null){
+
+                                            usertasks = usertasksz;
+                                            System.out.println("Current Task is: "+usertasks);
+                                            assigned.setText(usertasks);
+
+                                        }
+                                        else{
+
+                                            Log.d("TasksGetCurrentUser", "No Tasks Found");
+
+                                        }
 
                                     }
-                                    else{
 
-                                        Toast.makeText(getApplicationContext(), "No Tasks Found", Toast.LENGTH_SHORT).show();
+                                    @Override
+                                    public void onCancelled(@NonNull DatabaseError databaseError) {
 
                                     }
+                                });
 
-                                }
+                            }
+                            else{
 
-                                @Override
-                                public void onCancelled(@NonNull DatabaseError databaseError) {
-
-                                }
-                            });
+                                Log.d("GetParentUser", "No Current Parent User Retrieved");
+                            }
 
                         }
-                        else{
 
-                            Toast.makeText(getApplicationContext(), "No Current Parent Found", Toast.LENGTH_SHORT).show();
+                        catch(Exception e){
+
+                            Log.e("StatusLock", e.getMessage(), e);
+
                         }
-
                     }
 
-                    catch(Exception e){
+                }
 
-                        Log.e("StatusLock", e.getMessage(), e);
-
-                    }
+                @Override
+                public void onCancelled(DatabaseError databaseError) {
 
 
 
                 }
+            });
+        }
 
-            }
+        catch(Exception e){
 
-            @Override
-            public void onCancelled(DatabaseError databaseError) {
+            Log.e("GetParentOuter", e.getMessage(), e);
 
+        }
 
-
-            }
-        });
 
     }
 
@@ -223,55 +250,65 @@ public class StatusLockScreen extends Activity {
 
     public void getDeviceBlock(){
 
-        DatabaseReference getdev = FirebaseDatabase.getInstance().getReference();
-        getdev.addListenerForSingleValueEvent(new ValueEventListener() {
-            @Override
-            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+        try{
 
-                try{
+            DatabaseReference getdev = FirebaseDatabase.getInstance().getReference();
+            getdev.addListenerForSingleValueEvent(new ValueEventListener() {
+                @Override
+                public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
 
-                    System.out.println("Current Parent User: "+useremail+" and Current Child User: "+splitss[0]);
-                    String value = dataSnapshot.child("Users").child(useremail).child("Children").child(splitss[0]).child("Tasks").child("Status").getValue(String.class);
-                    if(value != null){
+                    try{
+
+                        System.out.println("Current Parent User: "+useremail+" and Current Child User: "+splitss[0]);
+                        String value = dataSnapshot.child("Users").child(useremail).child("Children").child(splitss[0]).child("Tasks").child("Status").getValue(String.class);
+                        if(value != null){
 
 
-                        int intval = Integer.parseInt(value);
-                        System.out.println("Ako karon kay: "+value);
-                        if(intval == 0){
+                            int intval = Integer.parseInt(value);
+                            System.out.println("Ako karon kay: "+value);
+                            if(intval == 0){
 
-                            isBlocked = 0;
-                            HomeKeyLocker homeKeyLocker = new HomeKeyLocker();
-                            homeKeyLocker.unlock();
-                            finish();
+                                isBlocked = 0;
+                                HomeKeyLocker homeKeyLocker = new HomeKeyLocker();
+                                homeKeyLocker.unlock();
+                                finish();
+                            }
+
+                            else {
+
+                                isBlocked = 1;
+                            }
+
                         }
+                        else{
 
-                        else {
+                            Toast.makeText(getApplicationContext(), "No Data Recieved!", Toast.LENGTH_SHORT).show();
 
-                            isBlocked = 1;
                         }
 
                     }
-                    else{
 
-                        Toast.makeText(getApplicationContext(), "No Data Recieved!", Toast.LENGTH_SHORT).show();
+                    catch(Exception e){
+
+                        Log.e("DeviceLock", e.getMessage(), e);
 
                     }
 
                 }
 
-                catch(Exception e){
-
-                    Log.e("DeviceLock", e.getMessage(), e);
+                @Override
+                public void onCancelled(@NonNull DatabaseError databaseError) {
 
                 }
+            });
 
-            }
+        }
 
-            @Override
-            public void onCancelled(@NonNull DatabaseError databaseError) {
+        catch(Exception e){
 
-            }
-        });
+            Log.e("DeviceLockOuter", e.getMessage(), e);
+
+        }
 
     }
 

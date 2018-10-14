@@ -60,46 +60,56 @@ public class MainClass extends Activity {
 
     public void getCurrentUser(){
 
-        String split[] = passval.split("@");
-        DatabaseReference getuser = FirebaseDatabase.getInstance().getReference().child("Children");
-        getuser.child(split[0]).addListenerForSingleValueEvent(new ValueEventListener() {
-            @Override
-            public void onDataChange(DataSnapshot dataSnapshot) {
+        try{
 
-                if( dataSnapshot != null){
+            String split[] = passval.split("@");
+            DatabaseReference getuser = FirebaseDatabase.getInstance().getReference("CurrentParent");
+            getuser.child(split[0]).addListenerForSingleValueEvent(new ValueEventListener() {
+                @Override
+                public void onDataChange(DataSnapshot dataSnapshot) {
 
-                    try{
+                    if( dataSnapshot != null){
 
-                        String nauser = dataSnapshot.getValue(String.class);
-                        if(nauser!=null){
+                        try{
 
-                            user = nauser;
-                            System.out.println(user);
-                            passvalue = user;
+                            String nauser = dataSnapshot.getValue(String.class);
+                            if(nauser!=null){
+
+                                user = nauser;
+                                System.out.println(user);
+                                passvalue = user;
+
+                            }
+                            else{
+
+                                Log.d("GetCurrentUser", "No Current User Found");
+                            }
 
                         }
-                        else{
 
-                            Toast.makeText(getApplicationContext(), "No Current Parent Found", Toast.LENGTH_SHORT).show();
+                        catch(Exception e){
+
+                            Log.e("MainClass", e.getMessage(), e);
                         }
-
                     }
 
-                    catch(Exception e){
-
-                        Log.e("MainClass", e.getMessage(), e);
-                    }
                 }
 
-            }
-
-            @Override
-            public void onCancelled(DatabaseError databaseError) {
+                @Override
+                public void onCancelled(DatabaseError databaseError) {
 
 
 
-            }
-        });
+                }
+            });
+
+        }
+
+        catch(Exception e){
+
+            Log.e("GetCurrentUserMain", e.getMessage(), e);
+
+        }
 
     }
 

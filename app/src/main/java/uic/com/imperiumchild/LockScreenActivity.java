@@ -56,22 +56,32 @@ public class LockScreenActivity extends Activity {
         startTimer();
         Boolean active = devicePolicyManager.isAdminActive(compName);
 
-        if(active){
+        try{
 
-            makeFullScreen();
-            startService(new Intent(this, CheckerService.class));
-            setContentView(R.layout.activity_lockscreen);
-            HomeKeyLocker homeKeyLocker = new HomeKeyLocker();
-            homeKeyLocker.lock(this);
-            devicePolicyManager.lockNow();
+            if(active){
+
+                makeFullScreen();
+                startService(new Intent(this, CheckerService.class));
+                setContentView(R.layout.activity_lockscreen);
+                HomeKeyLocker homeKeyLocker = new HomeKeyLocker();
+                homeKeyLocker.lock(this);
+                devicePolicyManager.lockNow();
+
+            }
+            else {
+
+                Intent intent = new Intent(DevicePolicyManager.ACTION_ADD_DEVICE_ADMIN);
+                intent.putExtra(DevicePolicyManager.EXTRA_DEVICE_ADMIN, compName);
+                intent.putExtra(DevicePolicyManager.EXTRA_ADD_EXPLANATION, "You need me :)");
+                startActivityForResult(intent, RESULT_ENABLE);
+
+            }
 
         }
-        else if (!active) {
 
-            Intent intent = new Intent(DevicePolicyManager.ACTION_ADD_DEVICE_ADMIN);
-            intent.putExtra(DevicePolicyManager.EXTRA_DEVICE_ADMIN, compName);
-            intent.putExtra(DevicePolicyManager.EXTRA_ADD_EXPLANATION, "You need me :)");
-            startActivityForResult(intent, RESULT_ENABLE);
+        catch(Exception e){
+
+            Log.e("onStartLockActivity", e.getMessage(), e);
 
         }
 
@@ -80,27 +90,36 @@ public class LockScreenActivity extends Activity {
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        switch(requestCode) {
-            case RESULT_ENABLE :
-                if (resultCode == Activity.RESULT_OK) {
 
-                    makeFullScreen();
-                    startService(new Intent(this, CheckerService.class));
-                    setContentView(R.layout.activity_lockscreen);
-                    HomeKeyLocker homeKeyLocker = new HomeKeyLocker();
-                    homeKeyLocker.lock(this);
-                    devicePolicyManager.lockNow();
-                    Toast.makeText(LockScreenActivity.this, "Admin Device Features enabled!", Toast.LENGTH_SHORT).show();
+        try{
+
+            switch(requestCode) {
+                case RESULT_ENABLE :
+                    if (resultCode == Activity.RESULT_OK) {
+
+                        makeFullScreen();
+                        startService(new Intent(this, CheckerService.class));
+                        setContentView(R.layout.activity_lockscreen);
+                        HomeKeyLocker homeKeyLocker = new HomeKeyLocker();
+                        homeKeyLocker.lock(this);
+                        devicePolicyManager.lockNow();
+                        Toast.makeText(LockScreenActivity.this, "Admin Device Features enabled!", Toast.LENGTH_SHORT).show();
 
 
-                } else {
+                    } else {
 
-                    Toast.makeText(LockScreenActivity.this, "Problem to enable the Admin Device features", Toast.LENGTH_SHORT).show();
+                        Toast.makeText(LockScreenActivity.this, "Problem to enable the Admin Device features", Toast.LENGTH_SHORT).show();
 
-                }
-                break;
+                    }
+                    break;
+            }
         }
 
+        catch(Exception e){
+
+            Log.e("onResultStartLock", e.getMessage(), e);
+
+        }
         super.onActivityResult(requestCode, resultCode, data);
     }
 
@@ -145,101 +164,121 @@ public class LockScreenActivity extends Activity {
 
     public void getDeviceBlock(){
 
-        DatabaseReference getdev = FirebaseDatabase.getInstance().getReference();
-        getdev.addListenerForSingleValueEvent(new ValueEventListener() {
-            @Override
-            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+        try{
 
-                try{
+            DatabaseReference getdev = FirebaseDatabase.getInstance().getReference();
+            getdev.addListenerForSingleValueEvent(new ValueEventListener() {
+                @Override
+                public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
 
-                    System.out.println("Current Parent User: "+useremail+" and Current Child User: "+splitss[0]);
-                    String value = dataSnapshot.child("Users").child(useremail).child("Children").child(splitss[0]).child("BlockDevice").getValue(String.class);
-                    if (value != null) {
+                    try{
 
-                        int intval = Integer.parseInt(value);
-                        System.out.println("Ako karon kay: "+value);
-                        if(intval == 0){
+                        System.out.println("Current Parent User: "+useremail+" and Current Child User: "+splitss[0]);
+                        String value = dataSnapshot.child("Users").child(useremail).child("Children").child(splitss[0]).child("BlockDevice").getValue(String.class);
+                        if (value != null) {
 
-                            isBlocked = 0;
-                            HomeKeyLocker homeKeyLocker = new HomeKeyLocker();
-                            homeKeyLocker.unlock();
-                            finish();
+                            int intval = Integer.parseInt(value);
+                            System.out.println("Ako karon kay: "+value);
+                            if(intval == 0){
+
+                                isBlocked = 0;
+                                HomeKeyLocker homeKeyLocker = new HomeKeyLocker();
+                                homeKeyLocker.unlock();
+                                finish();
+                            }
+
+                            else {
+
+                                isBlocked = 1;
+                            }
+
                         }
 
                         else {
 
-                            isBlocked = 1;
+                            Toast.makeText(getApplicationContext(), "Invalid Number", Toast.LENGTH_SHORT).show();
+
                         }
-
-                    }
-
-                    else {
-
-                        Toast.makeText(getApplicationContext(), "Invalid Number", Toast.LENGTH_SHORT).show();
-
-                    }
-
-                }
-
-                catch(Exception e){
-
-                    Log.e("LockDeviceBlock", e.getMessage(), e);
-
-                }
-
-
-            }
-
-            @Override
-            public void onCancelled(@NonNull DatabaseError databaseError) {
-
-            }
-        });
-
-    }
-
-    public void getCurrentParentUser(){
-
-        DatabaseReference getuser = FirebaseDatabase.getInstance().getReference();
-        getuser.addListenerForSingleValueEvent(new ValueEventListener() {
-            @Override
-            public void onDataChange(DataSnapshot dataSnapshot) {
-
-                if( dataSnapshot != null){
-
-                    try{
-
-                        String us = dataSnapshot.child("Current").child("currentuser").getValue(String.class);
-                        if(us!=null){
-
-                            useremail = us;
-                            System.out.println(useremail);
-                        }
-                        else{
-
-                            Toast.makeText(getApplicationContext(), "No Current Parent Found", Toast.LENGTH_SHORT).show();
-                        }
-
 
                     }
 
                     catch(Exception e){
 
-                        Log.e("LockParentUser", e.getMessage(), e);
+                        Log.e("LockDeviceBlock", e.getMessage(), e);
+
+                    }
+
+
+                }
+
+                @Override
+                public void onCancelled(@NonNull DatabaseError databaseError) {
+
+                }
+            });
+
+        }
+
+        catch(Exception e){
+
+            Log.e("LockDeviceBlockOuter", e.getMessage(), e);
+
+        }
+
+    }
+
+    public void getCurrentParentUser(){
+
+        try{
+
+            DatabaseReference getuser = FirebaseDatabase.getInstance().getReference();
+            getuser.addListenerForSingleValueEvent(new ValueEventListener() {
+                @Override
+                public void onDataChange(DataSnapshot dataSnapshot) {
+
+                    if( dataSnapshot != null){
+
+                        try{
+
+                            String us = dataSnapshot.child("Current").child(splitss[0]).getValue(String.class);
+                            if(us!=null){
+
+                                useremail = us;
+                                System.out.println(useremail);
+                            }
+                            else{
+
+                                Toast.makeText(getApplicationContext(), "No Current Parent Found", Toast.LENGTH_SHORT).show();
+                            }
+
+
+                        }
+
+                        catch(Exception e){
+
+                            Log.e("LockParentUser", e.getMessage(), e);
+
+                        }
 
                     }
 
                 }
 
-            }
-
-            @Override
-            public void onCancelled(DatabaseError databaseError) {
+                @Override
+                public void onCancelled(DatabaseError databaseError) {
 
 
 
-            }
-        });
+                }
+            });
+        }
+
+        catch(Exception e){
+
+            Log.e("LockParentUserOuter", e.getMessage(), e);
+
+        }
+
 
     }
 
