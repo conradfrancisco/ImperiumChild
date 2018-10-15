@@ -52,7 +52,7 @@ public class Broadcaster extends BroadcastReceiver {
 
             if(value != null){
 
-                if(value == "1"){
+                if(value.equals("1")){
 
                     Log.d("OnReceive", "Startling LOCK SCREEN");
                     start_lockscreen(context);

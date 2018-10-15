@@ -39,6 +39,7 @@ public class StatusLockScreen extends Activity {
     String useremail = "";
     String usertasks = "";
     String splitss[];
+    String amp = "";
     private ComponentName compName;
     public static final int RESULT_ENABLE = 11;
     private DevicePolicyManager devicePolicyManager;
@@ -55,12 +56,13 @@ public class StatusLockScreen extends Activity {
         ref = FirebaseDatabase.getInstance().getReference("Users");
         auth = FirebaseAuth.getInstance();
         current = auth.getCurrentUser();
-        constraint = (ConstraintLayout) findViewById(R.id.constraint);
         passval = current.getEmail();
+        splitss = passval.split("@");
+        System.out.println("Ako karon kay si: "+splitss[0]);
+        constraint = (ConstraintLayout) findViewById(R.id.constraint);
         waiting = (TextView) findViewById(R.id.waiting);
         accom = (Button) findViewById(R.id.accom);
         assigned = (TextView) findViewById(R.id.assigned);
-        splitss = passval.split("@");
         compName = new ComponentName(this, AdminClass.class);
         devicePolicyManager = (DevicePolicyManager) getSystemService(DEVICE_POLICY_SERVICE);
         startTimer();
@@ -97,6 +99,7 @@ public class StatusLockScreen extends Activity {
             @Override
             public void onClick(View view) {
 
+                System.out.println("Current Parent User: "+useremail+"Current User: "+splitss[0]);
                 ref.child(useremail).child("Children").child(splitss[0]).child("HardStatus").setValue("1");
                 accom.setVisibility(View.GONE);
                 waiting.setVisibility(View.VISIBLE);
@@ -152,20 +155,19 @@ public class StatusLockScreen extends Activity {
 
         try{
 
-            DatabaseReference getuser = FirebaseDatabase.getInstance().getReference();
+            DatabaseReference getuser = FirebaseDatabase.getInstance().getReference("CurrentParent");
             getuser.addListenerForSingleValueEvent(new ValueEventListener() {
                 @Override
                 public void onDataChange(DataSnapshot dataSnapshot) {
 
-                    if( dataSnapshot != null){
-
                         try{
 
-                            String useremailz = dataSnapshot.child("Current").child(splitss[0]).getValue(String.class);
+                            System.out.println("Current UserEmail: "+splitss[0]);
+                            String useremailz = dataSnapshot.child(splitss[0]).getValue(String.class);
                             if (useremailz != null) {
 
                                 useremail = useremailz;
-                                System.out.println(useremail);
+                                System.out.println("Current Useremail: "+useremail);
 
                                 DatabaseReference getusers = FirebaseDatabase.getInstance().getReference();
                                 getusers.addListenerForSingleValueEvent(new ValueEventListener() {
@@ -178,6 +180,7 @@ public class StatusLockScreen extends Activity {
                                             usertasks = usertasksz;
                                             System.out.println("Current Task is: "+usertasks);
                                             assigned.setText(usertasks);
+                                            amp = useremail;
 
                                         }
                                         else{
@@ -207,7 +210,6 @@ public class StatusLockScreen extends Activity {
                             Log.e("StatusLock", e.getMessage(), e);
 
                         }
-                    }
 
                 }
 

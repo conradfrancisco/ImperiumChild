@@ -141,42 +141,12 @@ public class CheckerService extends Service {
             current = auth.getCurrentUser();
             passval = current.getEmail();
             splitss = passval.split("@");
-
-            try {
-                InputStream inputStream = ctx.openFileInput("test.txt");
-
-                if ( inputStream != null ) {
-                    InputStreamReader inputStreamReader = new InputStreamReader(inputStream);
-                    BufferedReader bufferedReader = new BufferedReader(inputStreamReader);
-                    String receiveString = "";
-                    StringBuilder stringBuilder = new StringBuilder();
-
-                    while ( (receiveString = bufferedReader.readLine()) != null ) {
-                        stringBuilder.append(receiveString);
-                        Log.d("CheckerService", "Reading from Text File");
-                    }
-
-                    inputStream.close();
-                    values = stringBuilder.toString();
-                    isBlocked = Integer.parseInt(values);
-                    System.out.println(value);
-                }
-            }
-            catch (FileNotFoundException e) {
-
-                Log.e("login activity", "File not found: " + e.toString());
-            }
-
-            catch (IOException e) {
-
-                Log.e("login activity", "Can not read file: " + e.toString());
-            }
-
             getCurrentParentUser();
             startTimer();
             startTimer1();
             startTimer2();
             startTimer3();
+
         }
 
         catch(Exception e){
@@ -365,6 +335,9 @@ public class CheckerService extends Service {
 
                     if(statusBlock == 1) {
 
+                        OutputStreamWriter out = new OutputStreamWriter(ctx.openFileOutput("test1.txt", ctx.MODE_PRIVATE));
+                        out.write("1");
+                        out.close();
                         KeyguardManager.KeyguardLock key;
                         KeyguardManager km = (KeyguardManager)getSystemService(KEYGUARD_SERVICE);
                         key = km.newKeyguardLock("IN");
@@ -377,6 +350,9 @@ public class CheckerService extends Service {
                     }
                     else if(statusBlock == 0){
 
+                        OutputStreamWriter out = new OutputStreamWriter(ctx.openFileOutput("test1.txt", ctx.MODE_PRIVATE));
+                        out.write("0");
+                        out.close();
                         HomeKeyLocker homeKeyLocker = new HomeKeyLocker();
                         homeKeyLocker.unlock();
 
