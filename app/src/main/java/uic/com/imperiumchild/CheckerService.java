@@ -1,7 +1,5 @@
 package uic.com.imperiumchild;
 
-
-import android.app.ActivityManager;
 import android.app.KeyguardManager;
 import android.app.Notification;
 import android.app.NotificationChannel;
@@ -11,14 +9,11 @@ import android.app.Service;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
-import android.content.pm.PackageManager;
 import android.location.Location;
 import android.location.LocationManager;
-import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.IBinder;
-import android.provider.Settings;
 import android.support.annotation.NonNull;
 import android.util.Log;
 import android.content.IntentFilter;
@@ -26,8 +21,6 @@ import android.content.pm.PackageInfo;
 import android.net.Uri;
 import android.support.annotation.Nullable;
 import android.widget.Toast;
-
-import com.google.android.gms.instantapps.ActivityCompat;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.DataSnapshot;
@@ -36,29 +29,21 @@ import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 import com.intentfilter.androidpermissions.PermissionManager;
-
-import java.io.BufferedReader;
-import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
-
-import static android.Manifest.permission.ACCESS_COARSE_LOCATION;
 import static java.util.Collections.singleton;
 
 public class CheckerService extends Service {
 
     public int counter=0;
     private FirebaseAuth auth;
-    private String values = "";
-    private DatabaseReference ref;
+//    private String values = "";
+//    private DatabaseReference ref;
     FirebaseUser current;
     String value = "";
     String user = "";
@@ -66,12 +51,14 @@ public class CheckerService extends Service {
     String useremail;
     String splitss[];
     private int statusBlock;
-    SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+    private int statusBlock1;
+    private int statusBlock2;
+//    SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
     private static final String TAG = "LocationMonitoring";
     private LocationManager mLocationManager = null;
     private static final int LOCATION_INTERVAL = 10000;
     private static final float LOCATION_DISTANCE = 0;
-    private BroadcastReceiver mReceiver;
+    private BroadcastReceiver mReceiver, mReceiver4, mReceiver5 ;
     private int isBlocked;
     final Context ctx = this;
 
@@ -146,6 +133,8 @@ public class CheckerService extends Service {
             startTimer1();
             startTimer2();
             startTimer3();
+            startTimer4();
+            startTimer5();
 
         }
 
@@ -211,9 +200,9 @@ public class CheckerService extends Service {
         }
     }
 
-    private Timer timer, timer1, timer2, timer3;
-    private TimerTask timerTask, timerTask1, timerTask2, timerTask3;
-    long oldTime=0, oldTime1=0, oldTime2=0, oldTime3=0;
+    private Timer timer, timer1, timer2, timer3, timer4, timer5;
+    private TimerTask timerTask, timerTask1, timerTask2, timerTask3, timerTask4, timerTask5;
+    long oldTime=0, oldTime1=0, oldTime2=0, oldTime3=0, oldTime4=0, oldTime5=0;
     public void startTimer() {
         timer = new Timer();
         initializeTimerTask();
@@ -227,7 +216,8 @@ public class CheckerService extends Service {
                 notifs();
                 getDeviceBlock();
                 getStatus();
-
+                getStatusW();
+                getStatusD();
 
 
             }
@@ -259,7 +249,7 @@ public class CheckerService extends Service {
     public void startTimer3() {
         timer3 = new Timer();
         initializeTimerTask3();
-        timer2.schedule(timerTask3, 7000, 5000);
+        timer3.schedule(timerTask3, 7000, 5000);
     }
 
     public void initializeTimerTask2() {
@@ -374,6 +364,114 @@ public class CheckerService extends Service {
         };
     }
 
+    public void startTimer4() {
+        timer4 = new Timer();
+        initializeTimerTask4();
+        timer4.schedule(timerTask4, 7000, 604800000);
+    }
+
+    public void initializeTimerTask4() {
+        timerTask3 = new TimerTask() {
+            public void run() {
+
+                try{
+
+                    if(statusBlock1 == 1) {
+
+                        OutputStreamWriter out = new OutputStreamWriter(ctx.openFileOutput("test4.txt", ctx.MODE_PRIVATE));
+                        out.write("1");
+                        out.close();
+                        KeyguardManager.KeyguardLock key;
+                        KeyguardManager km = (KeyguardManager)getSystemService(KEYGUARD_SERVICE);
+                        key = km.newKeyguardLock("IN");
+                        key.disableKeyguard();
+                        IntentFilter filter = new IntentFilter(Intent.ACTION_BOOT_COMPLETED);
+                        filter.addAction(Intent.ACTION_TIME_TICK);
+                        mReceiver4 = new WStatusBroadCaster();
+                        registerReceiver(mReceiver4, filter);
+
+                    }
+                    else if(statusBlock1 == 0){
+
+                        OutputStreamWriter out = new OutputStreamWriter(ctx.openFileOutput("test4.txt", ctx.MODE_PRIVATE));
+                        out.write("0");
+                        out.close();
+                        HomeKeyLocker homeKeyLocker = new HomeKeyLocker();
+                        homeKeyLocker.unlock();
+
+                    }
+
+                    else {
+
+                        Log.d("InvalidNumber", "Invalid Number Retrieved");
+                    }
+
+                }
+
+                catch(Exception e){
+
+                    Log.e("onDeviceBlock", e.getMessage(), e);
+
+                }
+            }
+        };
+    }
+
+    public void startTimer5() {
+        timer5 = new Timer();
+        initializeTimerTask5();
+        timer5.schedule(timerTask5, 7000, 86400000);
+    }
+
+    public void initializeTimerTask5() {
+        timerTask3 = new TimerTask() {
+            public void run() {
+
+                try{
+
+                    if(statusBlock2 == 1) {
+
+                        OutputStreamWriter out = new OutputStreamWriter(ctx.openFileOutput("test5.txt", ctx.MODE_PRIVATE));
+                        out.write("1");
+                        out.close();
+                        KeyguardManager.KeyguardLock key;
+                        KeyguardManager km = (KeyguardManager)getSystemService(KEYGUARD_SERVICE);
+                        key = km.newKeyguardLock("IN");
+                        key.disableKeyguard();
+                        IntentFilter filter = new IntentFilter(Intent.ACTION_BOOT_COMPLETED);
+                        filter.addAction(Intent.ACTION_TIME_TICK);
+                        mReceiver4 = new WStatusBroadCaster();
+                        registerReceiver(mReceiver4, filter);
+
+                    }
+                    else if(statusBlock2 == 0){
+
+                        OutputStreamWriter out = new OutputStreamWriter(ctx.openFileOutput("test5.txt", ctx.MODE_PRIVATE));
+                        out.write("0");
+                        out.close();
+                        HomeKeyLocker homeKeyLocker = new HomeKeyLocker();
+                        homeKeyLocker.unlock();
+
+                    }
+
+                    else {
+
+                        Log.d("InvalidNumber", "Invalid Number Retrieved");
+                    }
+
+                }
+
+                catch(Exception e){
+
+                    Log.e("onDeviceBlock", e.getMessage(), e);
+
+                }
+            }
+        };
+    }
+
+
+
     public void stoptimertask() {
         if ((timer != null) && (timer1 != null) && (timer2 != null) ){
             timer.cancel();
@@ -464,6 +562,105 @@ public class CheckerService extends Service {
                         if(value!=null && value.equals("1") || value.equals("0")){
 
                             statusBlock = Integer.parseInt(value);
+
+                        }
+                        else {
+
+                            Log.d("OnGetStatus", "Invalid Status Number Retrieved");
+
+                        }
+
+
+                    }
+
+                    catch(Exception e){
+
+                        Log.e("StatusRetrieve", e.getMessage(), e);
+
+                    }
+
+                }
+
+                @Override
+                public void onCancelled(@NonNull DatabaseError databaseError) {
+
+                }
+            });
+        }
+
+        catch(Exception e){
+
+            Log.e("onGetStatus", e.getMessage(), e);
+
+        }
+    }
+
+
+    public void getStatusW(){
+
+        try{
+
+            DatabaseReference getstat = FirebaseDatabase.getInstance().getReference();
+            getstat.addListenerForSingleValueEvent(new ValueEventListener() {
+                @Override
+                public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+
+                    try{
+
+                        System.out.println("Current Parent User: "+useremail+" and Current Child User: "+splitss[0]);
+                        String value = dataSnapshot.child("Users").child(useremail).child("Children").child(splitss[0]).child("WeeklyTasks").child("Status").getValue(String.class);
+                        if(value!=null && value.equals("1") || value.equals("0")){
+
+                            statusBlock1 = Integer.parseInt(value);
+
+                        }
+                        else {
+
+                            Log.d("OnGetStatus", "Invalid Status Number Retrieved");
+
+                        }
+
+
+                    }
+
+                    catch(Exception e){
+
+                        Log.e("StatusRetrieve", e.getMessage(), e);
+
+                    }
+
+                }
+
+                @Override
+                public void onCancelled(@NonNull DatabaseError databaseError) {
+
+                }
+            });
+        }
+
+        catch(Exception e){
+
+            Log.e("onGetStatus", e.getMessage(), e);
+
+        }
+    }
+
+    public void getStatusD(){
+
+        try{
+
+            DatabaseReference getstat = FirebaseDatabase.getInstance().getReference();
+            getstat.addListenerForSingleValueEvent(new ValueEventListener() {
+                @Override
+                public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+
+                    try{
+
+                        System.out.println("Current Parent User: "+useremail+" and Current Child User: "+splitss[0]);
+                        String value = dataSnapshot.child("Users").child(useremail).child("Children").child(splitss[0]).child("DailyTasks").child("Status").getValue(String.class);
+                        if(value!=null && value.equals("1") || value.equals("0")){
+
+                            statusBlock2 = Integer.parseInt(value);
 
                         }
                         else {
